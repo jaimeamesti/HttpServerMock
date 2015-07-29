@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Httpservermock by jaimeamesti</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Httpservermock</h1>
+      <h2 class="project-tagline">HTTP server mock is a library for testing which mocks HTTP requests.</h2>
+      <a href="https://github.com/jaimeamesti/HttpServerMock" class="btn">View on GitHub</a>
+      <a href="https://github.com/jaimeamesti/HttpServerMock/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/jaimeamesti/HttpServerMock/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h2>
+<a id="some-examples" class="anchor" href="#some-examples" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>SOME EXAMPLES</strong>
+</h2>
+
+<hr>
+
+<h3>
+<a id="delete" class="anchor" href="#delete" aria-hidden="true"><span class="octicon octicon-link"></span></a>Delete</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpExpectation(HttpMethod.DELETE, "http://localhost:50000/user/23")
+                .ExpectedRequestHeader("test", "test1")
+                .Response(
+                    HttpStatusCode.OK,
+                    HttpRequestContentType.Json,
+                    new ResponseTestClass { Name = "response", IsOld = true, Age = 12 });
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddJsonBody(new { Name = "test", Id = 23 });
+            request.AddHeader("test", "test1");
+            request.Method = Method.DELETE;
+
+            var response = restClient.Execute&lt;ResponseTestClass&gt;(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            hserver.VerifyAllRequestExpectationsAndUnexpectedRequests();
+        }
+</code></pre>
+
+<h3>
+<a id="post" class="anchor" href="#post" aria-hidden="true"><span class="octicon octicon-link"></span></a>Post</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpPostExpectation("http://localhost:50000/user/23")
+                .ExpectedNumberOfCalls(1)
+                .ExpectedContent(new { Name = "test", Id = 23 }, HttpRequestContentType.Json)
+                .ExpectedRequestHeader("test", "test1")
+                .Response(HttpStatusCode.OK, HttpRequestContentType.Json, new ResponseTestClass { Name = "response", IsOld = true, Age = 12 });
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddJsonBody(new { Name = "test", Id = 23 });
+            request.AddHeader("test", "test1");
+            request.Method = Method.POST;
+
+            var response = restClient.Execute&lt;ResponseTestClass&gt;(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNotNull(response.Data, "The response is empty.");               
+            Assert.AreEqual("response", response.Data.Name, "The response data is not the expected.");
+            Assert.IsTrue(response.Data.IsOld, "The response data is not the expected.");
+            Assert.AreEqual(12, response.Data.Age, "The response data is not the expected.");
+
+            hserver.VerifyAllRequestExpectationsAndUnexpectedRequests();
+        }
+</code></pre>
+
+<h3>
+<a id="setting-up-a-default-status-code" class="anchor" href="#setting-up-a-default-status-code" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setting up a default status code</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.ServerRequestsState.DefaultRespondStatusCode = HttpStatusCode.NotModified;
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.Method = Method.GET;
+
+            var response = restClient.Execute&lt;ResponseTestClass&gt;(request);
+            Assert.AreEqual(HttpStatusCode.NotModified, response.StatusCode, "The respond status code is not the expected.");
+        }
+</code></pre>
+
+<h3>
+<a id="using-a-request-validator" class="anchor" href="#using-a-request-validator" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using a request validator</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("http://localhost:50000/user/23")
+                .ExpectedNumberOfCalls(1)
+                .ExpectedRequestHeader("test", "test1")
+                .Validator(
+                    req =&gt;
+                    {
+                        return req.RequestUri.PathAndQuery == "/user/23";
+                    })
+                .Response(HttpStatusCode.OK, HttpRequestContentType.Json, new ResponseTestClass { Name = "response", IsOld = true, Age = 12 });
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddJsonBody(new { Name = "test", Id = 23 });
+            request.AddHeader("test", "test1");
+            request.Method = Method.GET;
+
+            var response = restClient.Execute&lt;ResponseTestClass&gt;(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNotNull(response.Data, "The response is empty.");                
+            Assert.AreEqual("response", response.Data.Name, "The response data is not the expected.");
+            Assert.IsTrue(response.Data.IsOld, "The response data is not the expected.");
+            Assert.AreEqual(12, response.Data.Age, "The response data is not the expected.");
+
+            hserver.VerifyAllRequestExpectationsAndUnexpectedRequests();
+        }
+</code></pre>
+
+<h3>
+<a id="setting-up-a-number-of-request-repetitions" class="anchor" href="#setting-up-a-number-of-request-repetitions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setting up a number of request repetitions</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpPostExpectation("http://localhost:50000/user/23")
+                .ExpectedNumberOfCalls(2)
+                .Response(HttpStatusCode.OK);
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23") { Method = Method.POST };
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+
+            response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+
+            response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.NotImplemented, response.StatusCode, "The respond status code is not the expected.");
+
+            hserver.VerifyAllRequestExpectationsAndUnexpectedRequests();
+        }
+</code></pre>
+
+<h3>
+<a id="http-request-header-validation" class="anchor" href="#http-request-header-validation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Http request header validation</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpPostExpectation("http://localhost:50000/user/23")
+                .ExpectedRequestHeaders(new Dictionary&lt;string, string&gt; { { "test", "value" } })
+                .Response(HttpStatusCode.OK);
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddHeader("test", "value");
+            request.Method = Method.POST;
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+        }
+</code></pre>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/jaimeamesti/HttpServerMock">Httpservermock</a> is maintained by <a href="https://github.com/jaimeamesti">jaimeamesti</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
+
