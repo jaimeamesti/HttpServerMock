@@ -99,8 +99,7 @@
 <pre><code>using (var hserver = new HttpServerMock(TestServerPort))
         {
             hserver.SetUpGetExpectation("http://localhost:50000/user/23")
-                .ExpectedNumberOfCalls(1)
-                .ExpectedRequestHeader("test", "test1")
+                .ExpectedNumberOfCalls(1)                    
                 .Validator(
                     req =&gt;
                     {
@@ -166,6 +165,109 @@
 
             var response = restClient.Execute(request);
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+        }
+</code></pre>
+
+<h3>
+<a id="using-plain-json-to-validate-the-request-content" class="anchor" href="#using-plain-json-to-validate-the-request-content" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using plain Json to validate the request content</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpPostExpectation("http://localhost:50000/user/23")
+                .ExpectedContent("{\"Name\":\"test\", \"IsOld\":true, \"Id\":23}", HttpRequestContentType.Json)
+                .Response(HttpStatusCode.OK);
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddJsonBody(new { Name = "test", Id = 23, IsOld = true });
+            request.Method = Method.POST;
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+        }
+</code></pre>
+
+<h3>
+<a id="using-plain-xml-to-validate-the-request-content" class="anchor" href="#using-plain-xml-to-validate-the-request-content" aria-hidden="true"><span class="octicon octicon-link"></span></a>using plain XML to validate the request content</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpPostExpectation("user/23")
+                .ExpectedContent("&lt;User&gt;&lt;Name&gt;test&lt;/Name&gt;&lt;IsOld&gt;true&lt;/IsOld&gt;&lt;Age&gt;23&lt;/Age&gt;&lt;/User&gt;", HttpRequestContentType.Xml)
+                .Response(HttpStatusCode.OK, HttpRequestContentType.Xml, new { Name = "testres", Age = 25, IsOld = false });
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddXmlBody(new ResponseTestClass() { Name = "test", Age = 23, IsOld = true });
+            request.Method = Method.POST;
+
+            var response = restClient.Execute&lt;ResponseTestClass&gt;(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+            Assert.AreEqual("testres", response.Data.Name, "The data returned by the server is not the expected.");
+            Assert.AreEqual(false, response.Data.IsOld, "The data returned by the server is not the expected.");
+            Assert.AreEqual(25, response.Data.Age, "The data returned by the server is not the expected.");
+        }
+</code></pre>
+
+<h3>
+<a id="using-dynamics-to-validate-the-xml-request-content" class="anchor" href="#using-dynamics-to-validate-the-xml-request-content" aria-hidden="true"><span class="octicon octicon-link"></span></a>using dynamics to validate the XML request content</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpPostExpectation("user/23")
+                .ExpectedContent(new { Name = "test", IsOld = true, Age = 23 }, HttpRequestContentType.Xml)
+                .Response(HttpStatusCode.OK, HttpRequestContentType.Xml, new { Name = "testres", Age = 25, IsOld = false });
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddXmlBody(new ResponseTestClass() { Name = "test", Age = 23, IsOld = true });
+            request.Method = Method.POST;
+
+            var response = restClient.Execute&lt;ResponseTestClass&gt;(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+            Assert.AreEqual("testres", response.Data.Name, "The data returned by the server is not the expected.");
+            Assert.AreEqual(false, response.Data.IsOld, "The data returned by the server is not the expected.");
+            Assert.AreEqual(25, response.Data.Age, "The data returned by the server is not the expected.");
+        }
+</code></pre>
+
+<h3>
+<a id="using-regular-expressions-for-url-validation" class="anchor" href="#using-regular-expressions-for-url-validation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using regular expressions for URL validation</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("user/[0-9]{2}")
+                .Response(HttpStatusCode.OK);
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23/data") { Method = Method.GET };
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+        }
+</code></pre>
+
+<h3>
+<a id="adding-special-http-headers-to-the-responses" class="anchor" href="#adding-special-http-headers-to-the-responses" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adding special HTTP headers to the responses</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("http://localhost:50000/user/23")
+                .Response(HttpStatusCode.OK)
+                .ResponseHeader("Content-Type", "application/text");
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.Method = Method.GET;
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+            Assert.IsTrue(response.Headers.Any(h =&gt; h.Name == "Content-Type" &amp;&amp; h.Value.ToString() == "application/text"), "The response does not contains the header.");
         }
 </code></pre>
 
