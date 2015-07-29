@@ -252,6 +252,42 @@
 </code></pre>
 
 <h3>
+<a id="using-a-response-builder-function" class="anchor" href="#using-a-response-builder-function" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using a response builder function</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("http://localhost:50000/user/23").ExpectedNumberOfCalls(1).Response(
+                req =&gt;
+                {
+                    var resp = new HttpResponseMessage
+                    {
+                        Content =
+                            new StringContent(
+                            "{\"Name\":\"test\", \"IsOld\":false, \"Age\":1}")
+                    };
+
+                    resp.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    return resp;
+                });
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddJsonBody(new { Name = "test", Id = 23 });
+            request.AddHeader("test", "test1");
+            request.Method = Method.GET;
+
+            var response = restClient.Execute&lt;ResponseTestClass&gt;(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNotNull(response.Data, "The response is empty.");                
+            Assert.AreEqual("test", response.Data.Name, "The response data is not the expected.");
+            Assert.IsFalse(response.Data.IsOld, "The response data is not the expected.");
+            Assert.AreEqual(1, response.Data.Age, "The response data is not the expected.");
+
+            hserver.VerifyAllRequestExpectationsAndUnexpectedRequests();
+        }
+</code></pre>
+
+<h3>
 <a id="adding-special-http-headers-to-the-responses" class="anchor" href="#adding-special-http-headers-to-the-responses" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adding special HTTP headers to the responses</h3>
 
 <pre><code>using (var hserver = new HttpServerMock(TestServerPort))
@@ -268,6 +304,72 @@
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
             Assert.IsNull(response.ErrorException, "The request contains an exception.");
             Assert.IsTrue(response.Headers.Any(h =&gt; h.Name == "Content-Type" &amp;&amp; h.Value.ToString() == "application/text"), "The response does not contains the header.");
+        }
+</code></pre>
+
+<h3>
+<a id="request-with-url-encoded-and-not-encoded" class="anchor" href="#request-with-url-encoded-and-not-encoded" aria-hidden="true"><span class="octicon octicon-link"></span></a>Request with URL encoded and not encoded</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("http://localhost:50000/user/age?q=%3E23")
+                .Response(HttpStatusCode.OK);
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/age?q=%3E23") { Method = Method.GET };
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+        }
+
+using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("http://localhost:50000/user/age?q=%3E23")
+                .Response(HttpStatusCode.OK);
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/age?q=&gt;E23") { Method = Method.GET };
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.NotImplemented, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+        }
+</code></pre>
+
+<h3>
+<a id="creating-a-timed-out-request" class="anchor" href="#creating-a-timed-out-request" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating a timed out request</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("http://localhost:50000/usER/23")
+                .TimedOut();
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23") { Method = Method.GET };
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(response.ErrorMessage, "The operation has timed out", "The request does not timed out.");
+        }
+</code></pre>
+
+<h3>
+<a id="verify-all-requests-calls" class="anchor" href="#verify-all-requests-calls" aria-hidden="true"><span class="octicon octicon-link"></span></a>Verify all requests calls</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23");
+            request.AddJsonBody(new { Name = "test", Id = 23 });
+            request.AddHeader("test", "test1");
+            request.Method = Method.POST;
+
+            var response = restClient.Execute&lt;ResponseTestClass&gt;(request);
+            Assert.AreEqual(HttpStatusCode.NotImplemented, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.Data, "The response is not empty.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+
+            hserver.VerifyAllRequestExpectationsAndUnexpectedRequests();
         }
 </code></pre>
 
