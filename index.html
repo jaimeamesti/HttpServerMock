@@ -78,6 +78,23 @@
 </code></pre>
 
 <h3>
+<a id="using-relatives-uris" class="anchor" href="#using-relatives-uris" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using Relatives Uris</h3>
+
+<pre><code>using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("user/23")
+                .Response(HttpStatusCode.OK);
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23") { Method = Method.GET };
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+        }
+</code></pre>
+
+<h3>
 <a id="setting-up-a-default-status-code" class="anchor" href="#setting-up-a-default-status-code" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setting up a default status code</h3>
 
 <pre><code>using (var hserver = new HttpServerMock(TestServerPort))
@@ -244,6 +261,19 @@
 
             var restClient = new RestClient(this.serverBaseUrl);
             var request = new RestRequest("/user/23/data") { Method = Method.GET };
+
+            var response = restClient.Execute(request);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
+            Assert.IsNull(response.ErrorException, "The request contains an exception.");
+        }
+
+using (var hserver = new HttpServerMock(TestServerPort))
+        {
+            hserver.SetUpGetExpectation("^/user/[0-9]{2}/data\\?name=paco$")
+                .Response(HttpStatusCode.OK);
+
+            var restClient = new RestClient(this.serverBaseUrl);
+            var request = new RestRequest("/user/23/data?name=paco") { Method = Method.GET };
 
             var response = restClient.Execute(request);
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "The respond status code is not the expected.");
