@@ -1,6 +1,8 @@
 # HttpServerMock
 HTTP server mock is a library for testing which mocks HTTP requests.
 
+You can find the libraries here: https://www.nuget.org/packages/HttpServerMock/
+
 SOME EXAMPLES
 
  Delete
