@@ -3,3 +3,8 @@
 ################################################################################
 
 /packages
+/.vs/HttpServerMock/v14
+/HMock/bin/Debug
+/HMock/obj/Debug
+/HMockTests/bin/Debug
+/HMockTests/obj/Debug

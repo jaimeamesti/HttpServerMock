@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>HttpServerMock</id>
+    <version>0.0.92</version>
+    <title>HTTP Server Mock</title>
+    <authors>Jaime Amesti</authors>
+    <owners>Jaime Amesti</owners>
+    <description>HTTP server mock is a really useful tool for testing, it will help you to mock HTTP requests.</description>
+    <releaseNotes>Fixed Newtonsoft.Json nuget package dependency.</releaseNotes>
+    <summary>HTTP server mock is a really useful tool for testing, it will help you to mock HTTP requests.</summary>
+    <language>en-US</language>
+    <projectUrl>http://jaimeamesti.github.io/HttpServerMock/</projectUrl>
+    <iconUrl>http://s9.postimg.org/y0i7at1mz/Location_HTTP_icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>© 20015 Jaime Amesti All Rights Reserved</copyright>
+    <dependencies>
+      <group targetFramework="net451">
+        <dependency id="Microsoft.AspNet.WebApi.SelfHost" version="5.2.0"/>
+        <dependency id="Newtonsoft.Json" version="6.0.3"></dependency>
+      </group>
+    </dependencies>
+    <references></references>
+    <tags>Http Server, Server, Mock, Testing, Integration Test, System Test</tags>
+  </metadata>
+  <files>
+    <file src="..\..\bin\HttpServerMock.dll" target="lib\net451\HttpServerMock.dll" />
+    <file src="..\..\bin\HttpServerMock.xml" target="lib\net451\HttpServerMock.xml" />
+  </files>
+</package>
